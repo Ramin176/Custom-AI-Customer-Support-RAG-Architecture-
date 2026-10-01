@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const { message } = await req.json();
 
     // مرحله ۱: تبدیل سوال کاربر به کدهای ریاضی (Embeddings)
-    const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
+    const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
     const embedResponse = await embeddingModel.embedContent(message);
     const queryEmbedding = embedResponse.embedding.values;
 
