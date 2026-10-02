@@ -2,14 +2,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { NextResponse } from "next/server";
 
-// این خط طلایی باعث می‌شود Vercel این صفحه را کش نکند و زنده اجرا شود
 export const dynamic = 'force-dynamic';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
 
 export async function GET() {
   try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
+    const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY as string });
+    
     const index = pc.index("support-index");
 
     const companyData = [
@@ -18,34 +17,45 @@ export async function GET() {
       "Pricing: The Pro subscription costs $29 per month, and the Enterprise plan is $99 per month. We currently do not offer any free tiers."
     ];
 
-    // استفاده از مدل جدید که بردارهای ۳۰۷۲ بعدی می‌سازد
-    const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
+    // استفاده از مدل اصلی و پایدار گوگل
+    const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
     const vectors: any[] = [];
 
     for (let i = 0; i < companyData.length; i++) {
       const text = companyData[i];
+      
+      // اگر اینجا خطایی رخ دهد، مستقیم روی صفحه چاپ می‌شود
       const response = await embeddingModel.embedContent(text);
-      const embeddingValues = response.embedding.values;
-
-      if (embeddingValues && embeddingValues.length > 0) {
-        vectors.push({
-          id: `chunk-${i}`,
-          values: embeddingValues,
-          metadata: { text: text }
-        });
+      
+      if (!response.embedding || !response.embedding.values) {
+        throw new Error(`Gemini Error: هیچ عددی برای این متن تولید نشد! پاسخ جمینای: ${JSON.stringify(response)}`);
       }
+
+      vectors.push({
+        id: `chunk-${i}`,
+        values: response.embedding.values,
+        metadata: { text: text }
+      });
     }
 
-    // تزریق به دیتابیس جدید ۳۰۷۲ بعدی
+    if (vectors.length === 0) {
+      throw new Error("آرایه بردارها خالی است! مشکلی در تولید Embeddings وجود دارد.");
+    }
+
+    // ارسال به پاین‌کن
     await index.upsert(vectors as any);
 
     return NextResponse.json({ 
       success: true, 
-      message: "Data successfully embedded (3072 Dimensions) and stored in Pinecone!" 
+      message: "دیتا با موفقیت در دیتابیس ذخیره شد!",
+      dimension_used: vectors[0].values.length
     });
 
   } catch (error: any) {
+    // چاپ دقیق ارور برای ما
     console.error("Setup Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      error: error.message || "خطای ناشناخته رخ داد"
+    }, { status: 500 });
   }
 }
