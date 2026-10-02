@@ -18,7 +18,7 @@ export async function GET() {
     ];
 
     // استفاده از مدل اصلی و پایدار گوگل
-    const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" });
+const embeddingModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
     const vectors: any[] = [];
 
     for (let i = 0; i < companyData.length; i++) {
