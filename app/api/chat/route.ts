@@ -29,8 +29,9 @@ export async function POST(req: Request) {
       .join('\n');
 
     // مرحله ۳: ساخت پرامپت حرفه‌ای و ترکیب قوانین شرکت با سوال کاربر
-    const chatModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
+   const chatModel = genAI.getGenerativeModel({
+  model: "gemini-3.5-flash"
+});
     const prompt = `
       You are a polite and professional customer support AI for a company named "DocuMind".
       Your ONLY job is to answer the user's question based strictly on the "Company Data" provided below.
